@@ -16,7 +16,7 @@ RUN <<EOF
 
     rm -rf \
         rector/ \
-        phpstan/ \
+        phpstan/phpstan/phpstan.phar \
         larastan/ \
         phpunit/ \
         fakerphp/ \
