@@ -52,11 +52,12 @@ RUN <<EOF
         TARGET_DIR=${ENTRY%%:*}
         STUB_FILE=${ENTRY#*:}
         
-        # 只删特定的子包目录，不伤及其父目录下的其他兄弟
         rm -rf "$TARGET_DIR"
+        echo rm -rf "$TARGET_DIR"
         
-        # 重建桩文件
         mkdir -p "$(dirname "$STUB_FILE")"
+        echo         mkdir -p "$(dirname "$STUB_FILE")"
+        
         echo "<?php" > "$STUB_FILE"
     done
 
@@ -75,6 +76,9 @@ RUN <<EOF
 
     rm -rf /var/cache/apk/* /tmp/*
 EOF
+
+RUN cd /var/www/html/resources/lang && \
+    find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
 
 COPY config/nginx.conf /etc/nginx/nginx.conf
 COPY config/conf.d /etc/nginx/conf.d/
