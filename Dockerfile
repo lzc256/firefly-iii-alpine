@@ -1,4 +1,5 @@
 ARG ALPINE_VERSION=3.23.3
+ARG FIREFLY_VERSION
 FROM alpine:${ALPINE_VERSION}
 LABEL Maintainer="lzc256 <i@lzc256.com>"
 LABEL Description="Firefly III"
@@ -22,32 +23,17 @@ RUN apk add --no-cache \
   php85-gd \
   php85-xml \
   php85-mbstring \
-  php85-pdo_sqlite
+  php85-pdo_sqlite \
+  php85-session
+  # php85-openssl \
   # php85-fileinfo \
-  # php85-session \
   # php85-simplexml \
   # php85-tokenizer \
-  # php85-openssl \
   # php85-xmlwriter \
   # php85-dom \
   # php85-shmop \
   # php85-pgsql \
   # php85-pdo_pgsql \
-  # php84-ctype \
-  # php84-curl \
-  # php84-dom \
-  # php84-fileinfo \
-  # php84-gd \
-  # php84-intl \
-  # php84-mbstring \
-  # php84-mysqli \
-  # php84-opcache \
-  # php84-phar \
-  # php84-session \
-  # php84-tokenizer \
-  # php84-xml \
-  # php84-xmlreader \
-  # php84-xmlwriter \
 
 RUN apk add --no-cache unzip
 
@@ -73,8 +59,10 @@ USER nobody
 
 # Add application
 # COPY --chown=nobody src/ /var/www/html/
-ADD --chown=nobody https://github.com/firefly-iii/firefly-iii/releases/download/v6.5.6/FireflyIII-v6.5.6.zip /var/www/html
-RUN unzip *.zip && rm *.zip
+
+ADD --chown=nobody https://github.com/firefly-iii/firefly-iii/releases/download/${FIREFLY_VERSION}/FireflyIII-${FIREFLY_VERSION}.zip /var/www/html/
+
+RUN unzip FireflyIII-${FIREFLY_VERSION}.zip && rm FireflyIII-${FIREFLY_VERSION}.zip
 
 # Expose the port nginx is reachable on
 EXPOSE 8080
