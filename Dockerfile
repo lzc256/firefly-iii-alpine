@@ -31,35 +31,36 @@ RUN <<EOF
     set -e
     cd /var/www/html
 
-    # 1. 准备 Composer
+    # 1. 物理删除所有确定的开发依赖
+    # 这步会直接把那些该死的 helpers.php 删掉
+    rm -rf \
+        vendor/rector vendor/phpstan vendor/larastan vendor/fakerphp \
+        vendor/mockery vendor/hamcrest vendor/sebastian vendor/phar-io \
+        vendor/theseer vendor/phpunit vendor/nunomaduro/collision \
+        vendor/spatie/backtrace vendor/spatie/flare-client-php \
+        vendor/spatie/ignition vendor/spatie/laravel-ignition
+
+    # 2. 准备 Composer
     curl -sS https://getcomposer.org/composer-stable.phar -o composer.phar
 
-    # 2. 【关键】在物理删除前先生成“干净”的索引
-    # 这一步会根据 release 原有的 composer.json 生成不含 dev 依赖的加载器
-    # 此时文件都还在，所以 dump 过程不会报错
+    # 3. 【核心黑科技】
+    # 既然之前的报错是因为索引里还有残留，我们直接删除旧索引，
+    # 并且在没有任何旧索引干扰的情况下强行生成全新的、只包含物理存在文件的索引。
+    rm -rf vendor/composer vendor/autoload.php
+
+    # 4. 重新生成索引
+    # 因为物理文件已经删了，新的 dump-autoload 扫描时根本找不到这些文件夹，
+    # 也就绝对不会把 helpers.php 写入新的 autoload_static.php 中。
     php composer.phar dump-autoload --no-dev --optimize --classmap-authoritative
 
-    # 3. 物理清理：只删确定没用的“外围”大户
-    # 注意：这里去掉了可能导致核心崩溃的目录（如 fruitcake, barryvdh 等）
-    cd vendor
-    rm -rf \
-        rector/ phpstan/ larastan/ fakerphp/ mockery/ \
-        hamcrest/ sebastian/ phar-io/ theseer/ \
-        phpunit/ nunomaduro/collision \
-        spatie/backtrace spatie/flare-client-php \
-        spatie/ignition spatie/laravel-ignition
+    # 5. 清理碎屑 (注意：不要删除 vendor 根目录下的任何 composer.json)
+    find vendor -maxdepth 3 -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
+    find vendor -maxdepth 3 -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" \) -delete
 
-    # 4. 【重要】find 清理时跳过关键文件
-    # 绝对不要删除 composer.json，否则 Laravel 的某些组件在运行时解析会失败
-    find . -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
-    find . -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" \) -delete
-
-    # 5. 收尾
-    cd /var/www/html
+    # 6. 收尾
     rm composer.phar
     apk del php85-phar
 EOF
-
 
 
 COPY config/nginx.conf /etc/nginx/nginx.conf
