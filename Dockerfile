@@ -1,13 +1,14 @@
 ARG ALPINE_VERSION=3.23.3
-ARG FIREFLY_VERSION
 FROM alpine:${ALPINE_VERSION}
+
+ARG FIREFLY_VERSION
 LABEL Maintainer="lzc256 <i@lzc256.com>"
 LABEL Description="Firefly III"
 # Setup document root
 WORKDIR /var/www/html
 
-ENV http_proxy http://192.168.1.50:7890
-ENV https_proxy http://192.168.1.50:7890
+# ENV http_proxy http://192.168.1.50:7890
+# ENV https_proxy http://192.168.1.50:7890
 # Install packages and remove default server definition
 RUN apk add --no-cache \
   curl \
