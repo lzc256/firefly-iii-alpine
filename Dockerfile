@@ -27,50 +27,44 @@ RUN apk add --no-cache \
 
 COPY --from=builder --chown=nobody:nobody /app /var/www/html
 
-
 RUN <<EOF
     set -e
     cd /var/www/html/vendor
 
-    # 1. 物理删除：砍掉大户
+    # 1. 定义需要“物理抹除”但保留“空文件占位”的开发依赖及其入口文件
+    # 格式: "目录名:辅助函数文件路径"
+    PKGS="
+    spatie/flare-client-php:src/helpers.php
+    spatie/laravel-ignition:src/helpers.php
+    nunomaduro/collision:src/Adapters/Phpunit/Autoload.php
+    phpunit/phpunit:src/Framework/Assert/Functions.php
+    mockery/mockery:library/helpers.php
+    rector/rector:bootstrap.php
+    phpstan/phpstan:bootstrap.php
+    "
+
+    # 2. 执行循环：删掉整个目录，然后精准重建空壳
+    for ENTRY in $PKGS; do
+        DIR=${ENTRY%%:*}
+        FILE=${ENTRY#*:}
+        
+        if [ -d "$DIR" ]; then
+            rm -rf "$DIR"
+            # 重建路径并创建 0 字节文件，彻底堵住 "Failed to open stream" 报错
+            mkdir -p "$(dirname "$DIR/$FILE")"
+            touch "$DIR/$FILE"
+        fi
+    done
+
+    # 3. 顺便砍掉其他没有辅助函数干扰的“大户”
     rm -rf \
-        rector/ phpstan/ larastan/ fakerphp/ mockery/ hamcrest/ \
-        sebastian/ phar-io/ theseer/ phpunit/ \
-        nunomaduro/collision spatie/backtrace \
-        spatie/flare-client-php spatie/ignition \
-        spatie/laravel-ignition fruitcake/laravel-debugbar
+        larastan/ fakerphp/ hamcrest/ sebastian/ \
+        phar-io/ theseer/ barryvdh/
 
-    # 2. 逻辑删除：在 autoload_files.php 中删掉指向已删除目录的行
-    # 我们只删包含特定关键字的行，这样 laravel/framework 和 symfony/ 的核心函数会被保留
-    if [ -f composer/autoload_files.php ]; then
-        sed -i '/phpstan/d' composer/autoload_files.php
-        sed -i '/phpunit/d' composer/autoload_files.php
-        sed -i '/mockery/d' composer/autoload_files.php
-        sed -i '/rector/d' composer/autoload_files.php
-        sed -i '/spatie\/flare-client-php/d' composer/autoload_files.php
-        sed -i '/spatie\/ignition/d' composer/autoload_files.php
-        sed -i '/laravel-ignition/d' composer/autoload_files.php
-        sed -i '/laravel-debugbar/d' composer/autoload_files.php
-        sed -i '/nunomaduro\/collision/d' composer/autoload_files.php
-    fi
-
-    # 3. 对 autoload_static.php 做同样的清理（这是为了兼容 opcache 开启的情况）
-    if [ -f composer/autoload_static.php ]; then
-        sed -i '/phpstan/d' composer/autoload_static.php
-        sed -i '/phpunit/d' composer/autoload_static.php
-        sed -i '/mockery/d' composer/autoload_static.php
-        sed -i '/rector/d' composer/autoload_static.php
-        sed -i '/spatie\/flare-client-php/d' composer/autoload_static.php
-        sed -i '/spatie\/ignition/d' composer/autoload_static.php
-        sed -i '/laravel-ignition/d' composer/autoload_static.php
-        sed -i '/laravel-debugbar/d' composer/autoload_static.php
-        sed -i '/nunomaduro\/collision/d' composer/autoload_static.php
-    fi
-
-    # 4. 清理碎屑
+    # 4. 极致清理：只删目录不删文件（处理 tests, docs 等）
     find . -maxdepth 3 -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
-    
-    # 5. 系统清理
+
+    # 5. 系统收尾：保住 Python (Supervisor 需要它)
     cd /
     apk del curl unzip || true
     rm -rf /var/cache/apk/*
