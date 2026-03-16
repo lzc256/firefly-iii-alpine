@@ -37,7 +37,7 @@ RUN <<EOF
     PKGS="
     phpstan:phpstan/phpstan/bootstrap.php
     rector:rector/rector/bootstrap.php
-    mockery:mockery/library/helpers.php
+    mockery:mockery/mockery/library/helpers.php
     :mockery/mockery/library/Mockery.php
     fakerphp:fakerphp/faker/src/Faker/Factory.php
     spatie:spatie/flare-client-php/src/helpers.php
