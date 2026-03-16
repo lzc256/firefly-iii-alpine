@@ -30,11 +30,10 @@ RUN <<EOF
     set -e
     cd /var/www/html/vendor
 
-    # 1. 空间统计
+    # 1. 统计原始体积
     SIZE_BEFORE=$(du -sm . | cut -f1)
 
-    # 2. 名单更新：[顶级目录]:[相对于 vendor 的完整桩文件路径]
-    # 注意：nunomaduro 目录下现在有两个包的处理逻辑
+    # 2. 精准复活名单 (解决 Fatal Error)
     PKGS="
     phpstan:phpstan/phpstan/bootstrap.php
     rector:rector/rector/bootstrap.php
@@ -48,37 +47,31 @@ RUN <<EOF
     phpunit:phpunit/src/Framework/Assert/Functions.php
     "
 
-    # 3. 循环逻辑
+    # 3. 循环爆破：删掉目录 -> 建桩文件
     for ENTRY in $PKGS; do
         TOP_DIR=${ENTRY%%:*}
         STUB_FILE=${ENTRY#*:}
-        
-        # 物理爆破顶级目录
-        # 这里会把 nunomaduro 整个删掉，但下面的 mkdir 会把它需要的生产文件建回来
         rm -rf "$TOP_DIR"
-        
-        # 精准复活
         mkdir -p "$(dirname "$STUB_FILE")"
         echo "<?php" > "$STUB_FILE"
     done
 
-    # 4. 补刀：删除完全不需要复活的纯垃圾
+    # 4. 暴力物理清理 (单行整合版)
+    # 第一行：彻底删除无用的包目录
     rm -rf larastan hamcrest sebastian phar-io theseer barryvdh thecodingmachine
+    # 第二行：全深度大扫除。清理所有 tests, docs, github 目录，以及 md, txt, LICENSE 等垃圾文件
+    find . -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name ".github" -o -name "examples" \) -exec rm -rf {} + && find . -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" -o -name "phpunit.xml*" -o -name ".editorconfig" \) -delete
 
-    # 5. 清理文档与测试
-    find . -maxdepth 3 -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
-
-    # 6. 结果输出
+    # 5. 最终成果
     SIZE_AFTER=$(du -sm . | cut -f1)
     echo "------------------------------------------------"
     echo "  Cleanup Summary: Saved $((SIZE_BEFORE - SIZE_AFTER)) MB"
     echo "  Final Vendor Size: ${SIZE_AFTER} MB"
     echo "------------------------------------------------"
 
-    # 7. 收尾
+    # 6. 系统收尾
     rm -rf /var/cache/apk/* /tmp/*
 EOF
-
 
 COPY config/nginx.conf /etc/nginx/nginx.conf
 COPY config/conf.d /etc/nginx/conf.d/
