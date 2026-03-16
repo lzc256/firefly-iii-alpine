@@ -25,64 +25,73 @@ RUN apk add --no-cache \
     && rm -rf /var/cache/apk/*
 
 COPY --from=builder --chown=nobody:nobody /app /var/www/html
-
 RUN <<EOF
     set -e
     cd /var/www/html/vendor
 
     SIZE_BEFORE=$(du -sm . | cut -f1)
 
-    # 1. 精准删除与桩文件名单
-    # 增加 thecodingmachine 的修复
+    # 1. 名单：[顶级根目录]:[复活的桩文件相对路径]
+    # 注意：这里 phpstan, rector 等现在直接指向根目录，会把下面所有子包一并删掉
     PKGS="
     phpstan:phpstan/phpstan/bootstrap.php
     rector:rector/rector/bootstrap.php
     mockery:mockery/library/helpers.php
-    mockery:mockery/library/Mockery.php
+    :mockery/mockery/library/Mockery.php
     fakerphp:fakerphp/faker/src/Faker/Factory.php
-    spatie/flare-client-php:spatie/flare-client-php/src/helpers.php
-    spatie/laravel-ignition:spatie/laravel-ignition/src/helpers.php
-    nunomaduro/collision:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
-    nunomaduro/termwind:nunomaduro/termwind/src/Functions.php
-    phpunit/phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
-    thecodingmachine/safe:thecodingmachine/safe/lib/special_cases.php
+    spatie:spatie/flare-client-php/src/helpers.php
+    :spatie/laravel-ignition/src/helpers.php
+    nunomaduro:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
+    :nunomaduro/termwind/src/Functions.php
+    phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
+    thecodingmachine:thecodingmachine/safe/lib/special_cases.php
     "
 
-    # 执行精准删除和复活
+    # 2. 核心循环
     for ENTRY in $PKGS; do
-        TARGET_DIR=${ENTRY%%:*}
+        TOP_DIR=${ENTRY%%:*}
         STUB_FILE=${ENTRY#*:}
-        rm -rf "$TARGET_DIR"
+        
+        # 如果有根目录定义，直接整块物理抹除
+        if [ -n "$TOP_DIR" ]; then
+            rm -rf "$TOP_DIR"
+        fi
+        
         mkdir -p "$(dirname "$STUB_FILE")"
         echo "<?php" > "$STUB_FILE"
     done
 
-    # 2. 暴力删除其他无钩子的包
+    # 3. 针对 thecodingmachine 的批量补丁 (解决那几十个 generated/*.php)
+    # 用一行 shell 循环直接生成所有可能的桩文件，防止 Fatal Error
+    SAFE_DIR="thecodingmachine/safe/generated"
+    mkdir -p "$SAFE_DIR"
+    for f in apache apcu array datetime dir errorfunc fpm hash json mysql network password pcntl pcre reflection session url; do
+        echo "<?php" > "$SAFE_DIR/$f.php"
+    done
+
+    # 4. 暴力清理其他已知的大户
     rm -rf larastan hamcrest sebastian phar-io theseer barryvdh
 
-    # 3. 全量深度大扫除 (vendor 内部)
+    # 5. 语言包深度精简 (只留 zh_CN, en_US, ja_JP)
+    cd /var/www/html/resources/lang
+    find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
+    
+    # 清理前端源码
+    rm -rf /var/www/html/resources/assets
+
+    # 6. 全量碎屑大扫除
+    cd /var/www/html/vendor
     find . -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name ".github" -o -name "examples" \) -exec rm -rf {} + && \
     find . -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" -o -name "phpunit.xml*" -o -name ".editorconfig" \) -delete
 
-    # 4. 语言包与资源清理 (resources 瘦身)
-    echo "Cleaning up languages and assets..."
-    cd /var/www/html/resources/lang
-    # 只留 zh_CN, en_US, ja_JP
-    find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
-    
-    # 删除原始前端源码 (已经编译到 public 了)
-    rm -rf /var/www/html/resources/assets
-
-    # 5. 结果统计
-    SIZE_AFTER=$(du -sm /var/www/html/vendor | cut -f1)
+    SIZE_AFTER=$(du -sm . | cut -f1)
     echo "------------------------------------------------"
     echo "  Cleanup Summary: Saved $((SIZE_BEFORE - SIZE_AFTER)) MB"
     echo "  Final Vendor Size: ${SIZE_AFTER} MB"
-    echo "  Final Resources Size: $(du -sh /var/www/html/resources | cut -f1)"
     echo "------------------------------------------------"
-
     rm -rf /var/cache/apk/* /tmp/*
 EOF
+
 
 COPY config/nginx.conf /etc/nginx/nginx.conf
 COPY config/conf.d /etc/nginx/conf.d/
