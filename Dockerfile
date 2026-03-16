@@ -32,53 +32,57 @@ RUN <<EOF
 
     SIZE_BEFORE=$(du -sm . | cut -f1)
 
-    # 1. 精准删除名单：[要删除的特定子目录]:[需要复活的桩文件]
-    # 这样 nunomaduro/collision 会被删，但 nunomaduro/termwind 会被跳过或精准复活
+    # 1. 精准删除与桩文件名单
+    # 增加 thecodingmachine 的修复
     PKGS="
-    phpstan/phpstan:phpstan/phpstan/bootstrap.php
-    rector/rector:rector/rector/bootstrap.php
-    mockery/mockery:mockery/library/helpers.php
-    mockery/mockery:mockery/library/Mockery.php
-    fakerphp/faker:fakerphp/faker/src/Faker/Factory.php
+    phpstan:phpstan/phpstan/bootstrap.php
+    rector:rector/rector/bootstrap.php
+    mockery:mockery/library/helpers.php
+    mockery:mockery/library/Mockery.php
+    fakerphp:fakerphp/faker/src/Faker/Factory.php
     spatie/flare-client-php:spatie/flare-client-php/src/helpers.php
     spatie/laravel-ignition:spatie/laravel-ignition/src/helpers.php
     nunomaduro/collision:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
     nunomaduro/termwind:nunomaduro/termwind/src/Functions.php
     phpunit/phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
+    thecodingmachine/safe:thecodingmachine/safe/lib/special_cases.php
     "
 
-    # 2. 第一步：执行针对性删除和复活
+    # 执行精准删除和复活
     for ENTRY in $PKGS; do
         TARGET_DIR=${ENTRY%%:*}
         STUB_FILE=${ENTRY#*:}
-        
         rm -rf "$TARGET_DIR"
-        echo rm -rf "$TARGET_DIR"
-        
         mkdir -p "$(dirname "$STUB_FILE")"
-        echo         mkdir -p "$(dirname "$STUB_FILE")"
-        
         echo "<?php" > "$STUB_FILE"
     done
 
-    # 3. 第二步：暴力清理其他完全无关的包（这些包没有 require 钩子）
-    rm -rf larastan hamcrest sebastian phar-io theseer barryvdh thecodingmachine
+    # 2. 暴力删除其他无钩子的包
+    rm -rf larastan hamcrest sebastian phar-io theseer barryvdh
 
-    # 4. 第三步：全量深度扫除杂质文件（tests, docs, md 等）
-    # 放在最后执行，确保它清理掉那些“健康包”里的垃圾，但由于我们已经 touch 了桩文件，它们会留下来
-    find . -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name ".github" -o -name "examples" \) -exec rm -rf {} + && find . -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" -o -name "phpunit.xml*" -o -name ".editorconfig" \) -delete
+    # 3. 全量深度大扫除 (vendor 内部)
+    find . -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name ".github" -o -name "examples" \) -exec rm -rf {} + && \
+    find . -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" -o -name "phpunit.xml*" -o -name ".editorconfig" \) -delete
 
-    SIZE_AFTER=$(du -sm . | cut -f1)
+    # 4. 语言包与资源清理 (resources 瘦身)
+    echo "Cleaning up languages and assets..."
+    cd /var/www/html/resources/lang
+    # 只留 zh_CN, en_US, ja_JP
+    find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
+    
+    # 删除原始前端源码 (已经编译到 public 了)
+    rm -rf /var/www/html/resources/assets
+
+    # 5. 结果统计
+    SIZE_AFTER=$(du -sm /var/www/html/vendor | cut -f1)
     echo "------------------------------------------------"
     echo "  Cleanup Summary: Saved $((SIZE_BEFORE - SIZE_AFTER)) MB"
     echo "  Final Vendor Size: ${SIZE_AFTER} MB"
+    echo "  Final Resources Size: $(du -sh /var/www/html/resources | cut -f1)"
     echo "------------------------------------------------"
 
     rm -rf /var/cache/apk/* /tmp/*
 EOF
-
-RUN cd /var/www/html/resources/lang && \
-    find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
 
 COPY config/nginx.conf /etc/nginx/nginx.conf
 COPY config/conf.d /etc/nginx/conf.d/
