@@ -20,45 +20,61 @@ RUN apk add --no-cache \
     curl nginx supervisor \
     php85 php85-fpm php85-bcmath php85-intl php85-curl php85-zip \
     php85-sodium php85-gd php85-xml php85-mbstring php85-pdo_sqlite \
-    php85-session php85-tokenizer php85-dom php85-simplexml php85-xmlwriter php85-openssl php85-phar \
+    php85-session php85-tokenizer php85-dom php85-simplexml php85-xmlwriter php85-openssl \
     && apk del python3 \
     && ln -s /usr/bin/php85 /usr/bin/php \
     && rm -rf /var/cache/apk/*
 
 COPY --from=builder --chown=nobody:nobody /app /var/www/html
 
+
 RUN <<EOF
     set -e
-    cd /var/www/html
+    cd /var/www/html/vendor
 
-    # 1. 物理删除：先精准砍掉那些绝对不需要的开发包
-    # 这样它们就不会在下一步的 dump 中被扫描到
+    # 1. 物理删除：砍掉大户
     rm -rf \
-        vendor/rector vendor/phpstan vendor/larastan vendor/fakerphp \
-        vendor/mockery vendor/hamcrest vendor/sebastian vendor/phar-io \
-        vendor/theseer vendor/phpunit vendor/nunomaduro/collision \
-        vendor/spatie/backtrace vendor/spatie/flare-client-php \
-        vendor/spatie/ignition vendor/spatie/laravel-ignition
+        rector/ phpstan/ larastan/ fakerphp/ mockery/ hamcrest/ \
+        sebastian/ phar-io/ theseer/ phpunit/ \
+        nunomaduro/collision spatie/backtrace \
+        spatie/flare-client-php spatie/ignition \
+        spatie/laravel-ignition fruitcake/laravel-debugbar
 
-    # 2. 准备 Composer
-    curl -sS https://getcomposer.org/composer-stable.phar -o composer.phar
+    # 2. 逻辑删除：在 autoload_files.php 中删掉指向已删除目录的行
+    # 我们只删包含特定关键字的行，这样 laravel/framework 和 symfony/ 的核心函数会被保留
+    if [ -f composer/autoload_files.php ]; then
+        sed -i '/phpstan/d' composer/autoload_files.php
+        sed -i '/phpunit/d' composer/autoload_files.php
+        sed -i '/mockery/d' composer/autoload_files.php
+        sed -i '/rector/d' composer/autoload_files.php
+        sed -i '/spatie\/flare-client-php/d' composer/autoload_files.php
+        sed -i '/spatie\/ignition/d' composer/autoload_files.php
+        sed -i '/laravel-ignition/d' composer/autoload_files.php
+        sed -i '/laravel-debugbar/d' composer/autoload_files.php
+        sed -i '/nunomaduro\/collision/d' composer/autoload_files.php
+    fi
 
-    # 3. 关键：在不删除旧索引的情况下，强行刷新
-    # 我们加上 --no-scripts 避免触发可能报错的钩子
-    # 虽然物理文件没了，但 Composer 会发现文件缺失并从新生成的索引中剔除它们
-    php composer.phar dump-autoload --no-dev --optimize --classmap-authoritative --no-scripts
+    # 3. 对 autoload_static.php 做同样的清理（这是为了兼容 opcache 开启的情况）
+    if [ -f composer/autoload_static.php ]; then
+        sed -i '/phpstan/d' composer/autoload_static.php
+        sed -i '/phpunit/d' composer/autoload_static.php
+        sed -i '/mockery/d' composer/autoload_static.php
+        sed -i '/rector/d' composer/autoload_static.php
+        sed -i '/spatie\/flare-client-php/d' composer/autoload_static.php
+        sed -i '/spatie\/ignition/d' composer/autoload_static.php
+        sed -i '/laravel-ignition/d' composer/autoload_static.php
+        sed -i '/laravel-debugbar/d' composer/autoload_static.php
+        sed -i '/nunomaduro\/collision/d' composer/autoload_static.php
+    fi
 
-    # 4. 二次清理：清理掉刚才删除操作可能留下的空目录
-    find vendor -maxdepth 2 -type d -empty -delete
-
-    # 5. 清理碎屑（注意：绝对不要在 vendor 下执行 -name "composer.json" -delete）
-    # 很多包的类加载依赖它自己的 composer.json
-    find vendor -maxdepth 3 -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
-    find vendor -maxdepth 3 -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" \) -delete
-
-    # 6. 收尾
-    rm composer.phar
-    apk del php85-phar
+    # 4. 清理碎屑
+    find . -maxdepth 3 -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
+    
+    # 5. 系统清理
+    cd /
+    apk del curl unzip || true
+    rm -rf /usr/lib/python3.12
+    rm -rf /var/cache/apk/*
 EOF
 
 
