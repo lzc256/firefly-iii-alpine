@@ -43,7 +43,7 @@ RUN <<EOF
         theseer/ \
         barryvdh/ \
         fruitcake/ \
-        phpunit/
+        phpunit/ \
         nunomaduro/collision \
         spatie/backtrace \
         spatie/flare-client-php \
