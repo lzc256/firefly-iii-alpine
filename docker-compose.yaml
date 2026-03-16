@@ -1,0 +1,8 @@
+services:
+  app:
+    build: .
+    ports:
+      - 24454:8080
+    volumes:
+      - .env:/var/www/html/.env
+      - ./firefly:/var/www/html/firefly
