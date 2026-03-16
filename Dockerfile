@@ -29,6 +29,13 @@ COPY --from=builder --chown=nobody:nobody /app /var/www/html
 
 RUN <<EOF
     set -e
+
+    cd /var/www/html
+    curl -sS https://getcomposer.org/composer-stable.phar -o composer.phar
+    php composer.phar dump-autoload --no-dev --optimize --classmap-authoritative
+    rm composer.phar
+    apk del php85-phar
+
     cd vendor
 
     rm -rf \
@@ -60,14 +67,6 @@ RUN <<EOF
         -o -name "phpunit.xml*" \
         -o -name "composer.json" \
     \) -delete
-
-    cd /var/www/html
-
-    curl -sS https://getcomposer.org/composer-stable.phar -o composer.phar
-    php composer.phar dump-autoload --no-dev --optimize --classmap-authoritative
-    rm composer.phar
-    apk del php85-phar
-
 EOF
 
 
