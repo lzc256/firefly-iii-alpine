@@ -28,12 +28,10 @@ COPY --from=builder --chown=nobody:nobody /app /var/www/html
 
 RUN <<EOF
     set -e
-    cd /var/www/html/vendor
 
     SIZE_BEFORE=$(du -sm . | cut -f1)
-
-    # 1. 名单：[顶级根目录]:[复活的桩文件相对路径]
-    # 已移除 thecodingmachine，确保不再产生 require 报错
+    
+    cd /var/www/html/vendor
     PKGS="
     phpstan:phpstan/phpstan/bootstrap.php
     rector:rector/rector/bootstrap.php
@@ -42,12 +40,12 @@ RUN <<EOF
     fakerphp:fakerphp/faker/src/Faker/Factory.php
     spatie:spatie/flare-client-php/src/helpers.php
     :spatie/laravel-ignition/src/helpers.php
+    :spatie/laravel-html/src/helpers.php
     nunomaduro:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
     :nunomaduro/termwind/src/Functions.php
     phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
     "
 
-    # 2. 核心循环：爆破根目录 + 复活必要桩文件
     for ENTRY in $PKGS; do
         TOP_DIR=${ENTRY%%:*}
         STUB_FILE=${ENTRY#*:}
@@ -60,22 +58,18 @@ RUN <<EOF
         echo "<?php" > "$STUB_FILE"
     done
 
-    # 3. 物理删除其他确认无 require 钩子的包
     rm -rf larastan hamcrest sebastian phar-io theseer barryvdh
 
-    # 4. 语言包精简：只留 中/英/日 (resources 瘦身大头)
     cd /var/www/html/resources/lang
     find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
     
-    # 清理前端源码
     rm -rf /var/www/html/resources/assets
 
-    # 5. 全量碎屑大扫除 (无差别清理 tests, docs, md 等)
-    cd /var/www/html/vendor
+    cd /var/www/html
     find . -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name ".github" -o -name "examples" \) -exec rm -rf {} + && \
     find . -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" -o -name "phpunit.xml*" -o -name ".editorconfig" \) -delete
 
-    # 6. 最终统计
+    cd /var/www/html
     SIZE_AFTER=$(du -sm . | cut -f1)
     echo "------------------------------------------------"
     echo "  Cleanup Result: $SIZE_BEFORE MB -> $SIZE_AFTER MB"
