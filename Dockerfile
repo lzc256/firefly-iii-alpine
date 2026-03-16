@@ -59,7 +59,7 @@ RUN <<EOF
     done
 
     rm -rf larastan hamcrest sebastian phar-io theseer barryvdh
-    find . -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name ".github" -o -name "examples" \) -exec rm -rf {} + && \
+    find . -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name ".github" -o -name "examples" \) ! -path "./laravel/*" ! -path "./symfony/*" -exec rm -rf {} + && \
 
     cd /var/www/html/resources/lang
     find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
