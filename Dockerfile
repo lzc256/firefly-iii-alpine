@@ -29,46 +29,37 @@ COPY --from=builder --chown=nobody:nobody /app /var/www/html
 
 RUN <<EOF
     set -e
-
     cd /var/www/html
-    rm -rf vendor/composer vendor/autoload.php
+
+    # 1. 准备 Composer
     curl -sS https://getcomposer.org/composer-stable.phar -o composer.phar
+
+    # 2. 【关键】在物理删除前先生成“干净”的索引
+    # 这一步会根据 release 原有的 composer.json 生成不含 dev 依赖的加载器
+    # 此时文件都还在，所以 dump 过程不会报错
     php composer.phar dump-autoload --no-dev --optimize --classmap-authoritative
+
+    # 3. 物理清理：只删确定没用的“外围”大户
+    # 注意：这里去掉了可能导致核心崩溃的目录（如 fruitcake, barryvdh 等）
+    cd vendor
+    rm -rf \
+        rector/ phpstan/ larastan/ fakerphp/ mockery/ \
+        hamcrest/ sebastian/ phar-io/ theseer/ \
+        phpunit/ nunomaduro/collision \
+        spatie/backtrace spatie/flare-client-php \
+        spatie/ignition spatie/laravel-ignition
+
+    # 4. 【重要】find 清理时跳过关键文件
+    # 绝对不要删除 composer.json，否则 Laravel 的某些组件在运行时解析会失败
+    find . -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
+    find . -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" \) -delete
+
+    # 5. 收尾
+    cd /var/www/html
     rm composer.phar
     apk del php85-phar
-
-    cd vendor
-
-    rm -rf \
-        rector/ \
-        phpstan/ \
-        larastan/ \
-        fakerphp/ \
-        mockery/ \
-        hamcrest/ \
-        sebastian/ \
-        phar-io/ \
-        theseer/ \
-        barryvdh/ \
-        fruitcake/ \
-        phpunit/ \
-        nunomaduro/collision \
-        spatie/backtrace \
-        spatie/flare-client-php \
-        spatie/ignition \
-        spatie/laravel-ignition
-
-    find . -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
-    
-    find . -type f \( \
-        -name "*.md" \
-        -o -name "*.txt" \
-        -o -name "LICENSE*" \
-        -o -name ".gitignore" \
-        -o -name "phpunit.xml*" \
-        -o -name "composer.json" \
-    \) -delete
 EOF
+
 
 
 COPY config/nginx.conf /etc/nginx/nginx.conf
@@ -80,8 +71,7 @@ COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN chown -R nobody:nobody /var/www/html /run /var/lib/nginx /var/log/nginx
 
-USER nobody
-EXPOSE 8080
+USER nobodyE 8080
 
 HEALTHCHECK --timeout=10s CMD curl --silent --fail http://127.0.0.1:8080/fpm-ping || exit 1
 
