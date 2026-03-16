@@ -73,7 +73,6 @@ RUN <<EOF
     # 5. 系统清理
     cd /
     apk del curl unzip || true
-    rm -rf /usr/lib/python3.12
     rm -rf /var/cache/apk/*
 EOF
 
