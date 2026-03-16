@@ -26,11 +26,11 @@ RUN <<EOF
         theseer/ \
         barryvdh/ \
         fruitcake/ \
-        nunomaduro/collision \
-        spatie/backtrace \
-        spatie/flare-client-php \
-        spatie/ignition \
-        spatie/laravel-ignition
+        nunomaduro/collision
+        # spatie/backtrace \
+        # spatie/flare-client-php \
+        # spatie/ignition \
+        # spatie/laravel-ignition
         # phpunit/
 
     find . -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
