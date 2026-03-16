@@ -29,6 +29,7 @@ COPY --from=builder --chown=nobody:nobody /app /var/www/html
 
 RUN <<EOF
     set -e
+    SIZE_BEFORE=$(du -sm . | cut -f1)
     cd /var/www/html/vendor
 
     # 1. 扩充名单：不仅包含 helpers，还包含那些被 require 强制钩住的入口文件
@@ -72,6 +73,13 @@ RUN <<EOF
     cd /
     apk del curl unzip || true
     rm -rf /var/cache/apk/*
+
+    cd /var/www/html
+    SIZE_AFTER=$(du -sm . | cut -f1)
+    SAVED=$((SIZE_BEFORE - SIZE_AFTER))
+    echo "  Before: ${SIZE_BEFORE} MB"
+    echo "  After:  ${SIZE_AFTER} MB"
+    echo "  Saved:  ${SAVED} MB"
 EOF
 
 COPY config/nginx.conf /etc/nginx/nginx.conf
