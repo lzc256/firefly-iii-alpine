@@ -18,8 +18,7 @@ RUN <<EOF
         rector/ \
         phpstan/phpstan/phpstan.phar \
         larastan/ \
-        phpunit/ \
-        fakerphp/ \
+        fakerphp/faker/src/Faker/Provider \
         mockery/ \
         hamcrest/ \
         sebastian/ \
@@ -32,6 +31,7 @@ RUN <<EOF
         spatie/flare-client-php \
         spatie/ignition \
         spatie/laravel-ignition
+        # phpunit/
 
     find . -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
     
