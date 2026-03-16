@@ -25,6 +25,7 @@ RUN apk add --no-cache \
     && rm -rf /var/cache/apk/*
 
 COPY --from=builder --chown=nobody:nobody /app /var/www/html
+
 RUN <<EOF
     set -e
     cd /var/www/html/vendor
@@ -32,7 +33,7 @@ RUN <<EOF
     SIZE_BEFORE=$(du -sm . | cut -f1)
 
     # 1. 名单：[顶级根目录]:[复活的桩文件相对路径]
-    # 注意：这里 phpstan, rector 等现在直接指向根目录，会把下面所有子包一并删掉
+    # 已移除 thecodingmachine，确保不再产生 require 报错
     PKGS="
     phpstan:phpstan/phpstan/bootstrap.php
     rector:rector/rector/bootstrap.php
@@ -44,15 +45,13 @@ RUN <<EOF
     nunomaduro:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
     :nunomaduro/termwind/src/Functions.php
     phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
-    thecodingmachine:thecodingmachine/safe/lib/special_cases.php
     "
 
-    # 2. 核心循环
+    # 2. 核心循环：爆破根目录 + 复活必要桩文件
     for ENTRY in $PKGS; do
         TOP_DIR=${ENTRY%%:*}
         STUB_FILE=${ENTRY#*:}
         
-        # 如果有根目录定义，直接整块物理抹除
         if [ -n "$TOP_DIR" ]; then
             rm -rf "$TOP_DIR"
         fi
@@ -61,37 +60,29 @@ RUN <<EOF
         echo "<?php" > "$STUB_FILE"
     done
 
-    # 3. 针对 thecodingmachine 的批量补丁 (解决那几十个 generated/*.php)
-    # 用一行 shell 循环直接生成所有可能的桩文件，防止 Fatal Error
-    SAFE_DIR="thecodingmachine/safe/generated"
-    mkdir -p "$SAFE_DIR"
-    for f in apache apcu array datetime dir errorfunc fpm hash json mysql network password pcntl pcre reflection session url; do
-        echo "<?php" > "$SAFE_DIR/$f.php"
-    done
-
-    # 4. 暴力清理其他已知的大户
+    # 3. 物理删除其他确认无 require 钩子的包
     rm -rf larastan hamcrest sebastian phar-io theseer barryvdh
 
-    # 5. 语言包深度精简 (只留 zh_CN, en_US, ja_JP)
+    # 4. 语言包精简：只留 中/英/日 (resources 瘦身大头)
     cd /var/www/html/resources/lang
     find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
     
     # 清理前端源码
     rm -rf /var/www/html/resources/assets
 
-    # 6. 全量碎屑大扫除
+    # 5. 全量碎屑大扫除 (无差别清理 tests, docs, md 等)
     cd /var/www/html/vendor
     find . -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name ".github" -o -name "examples" \) -exec rm -rf {} + && \
     find . -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" -o -name "phpunit.xml*" -o -name ".editorconfig" \) -delete
 
+    # 6. 最终统计
     SIZE_AFTER=$(du -sm . | cut -f1)
     echo "------------------------------------------------"
-    echo "  Cleanup Summary: Saved $((SIZE_BEFORE - SIZE_AFTER)) MB"
-    echo "  Final Vendor Size: ${SIZE_AFTER} MB"
+    echo "  Cleanup Result: $SIZE_BEFORE MB -> $SIZE_AFTER MB"
+    echo "  Saved: $((SIZE_BEFORE - SIZE_AFTER)) MB"
     echo "------------------------------------------------"
     rm -rf /var/cache/apk/* /tmp/*
 EOF
-
 
 COPY config/nginx.conf /etc/nginx/nginx.conf
 COPY config/conf.d /etc/nginx/conf.d/
