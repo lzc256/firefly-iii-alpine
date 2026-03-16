@@ -30,14 +30,14 @@ RUN <<EOF
     set -e
     cd /var/www/html/vendor
 
-    # 1. 初始大小统计
+    # 1. 空间统计
     SIZE_BEFORE=$(du -sm . | cut -f1)
 
-    # 2. 核心名单：[顶级目录]:[需要复活的入口文件相对路径]
-    # 只要出现在冒号前的目录，都会被整块物理删除
+    # 2. 名单：[顶级目录]:[相对于 vendor 的完整桩文件路径]
+    # 只要冒号前出现的目录，都会被 rm -rf 彻底物理抹除
     PKGS="
-    phpstan:phpstan/bootstrap.php
-    rector:rector/bootstrap.php
+    phpstan:phpstan/phpstan/bootstrap.php
+    rector:rector/rector/bootstrap.php
     mockery:mockery/library/helpers.php
     mockery:mockery/library/Mockery.php
     fakerphp:faker/src/Faker/Factory.php
@@ -47,37 +47,36 @@ RUN <<EOF
     phpunit:phpunit/src/Framework/Assert/Functions.php
     "
 
-    # 3. 单个 For 循环搞定“爆破”与“复活”
+    # 3. 核心循环：先爆破，后伪造
     for ENTRY in $PKGS; do
-        TOP_DIR=${ENTRY%%:*}   # 拿到冒号前的顶级目录，如 phpstan
-        STUB_FILE=${ENTRY#*:}   # 拿到冒号后的完整路径，如 phpstan/bootstrap.php
+        TOP_DIR=${ENTRY%%:*}
+        STUB_FILE=${ENTRY#*:}
         
-        # 物理爆破：管它里面有多少兆，直接推平
+        # 彻底删除顶级大户（如 phpstan 整个文件夹）
         rm -rf "$TOP_DIR"
         
-        # 精准复活：重建入口，骗过加载器
+        # 精准复活报错要求的入口文件
         mkdir -p "$(dirname "$STUB_FILE")"
         echo "<?php" > "$STUB_FILE"
     done
 
-    # 4. 补刀：删除没有 Hook 文件的纯开发垃圾
+    # 4. 补刀：删除没有 require 钩子的纯开发包 (直接物理消失)
     rm -rf larastan hamcrest sebastian phar-io theseer barryvdh thecodingmachine
 
-    # 5. 极致清理： tests/docs
+    # 5. 极致清理：清除所有 vendor 下的无用文档/测试
     find . -maxdepth 3 -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
 
-    # 6. 成果展示
+    # 6. 结果输出
     SIZE_AFTER=$(du -sm . | cut -f1)
-    echo "----------------------------------------"
-    echo "  Cleanup Result: $SIZE_BEFORE MB -> $SIZE_AFTER MB"
-    echo "  Space Saved: $((SIZE_BEFORE - SIZE_AFTER)) MB"
-    echo "----------------------------------------"
+    echo "------------------------------------------------"
+    echo "  Cleanup Summary: Saved $((SIZE_BEFORE - SIZE_AFTER)) MB"
+    echo "  Final Vendor Size: ${SIZE_AFTER} MB"
+    echo "------------------------------------------------"
 
-    # 7. 彻底移除 Python (现在已经不需要它了)
-    cd /
-    apk del curl unzip || true
-    rm -rf /var/cache/apk/*
+    # 7. 系统收尾 (不再需要手动删 Python，只清缓存)
+    rm -rf /var/cache/apk/* /tmp/*
 EOF
+
 
 COPY config/nginx.conf /etc/nginx/nginx.conf
 COPY config/conf.d /etc/nginx/conf.d/
