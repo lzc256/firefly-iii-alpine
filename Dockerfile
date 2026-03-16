@@ -33,8 +33,8 @@ RUN <<EOF
     # 1. 空间统计
     SIZE_BEFORE=$(du -sm . | cut -f1)
 
-    # 2. 名单：[顶级目录]:[相对于 vendor 的完整桩文件路径]
-    # 只要冒号前出现的目录，都会被 rm -rf 彻底物理抹除
+    # 2. 名单更新：[顶级目录]:[相对于 vendor 的完整桩文件路径]
+    # 注意：nunomaduro 目录下现在有两个包的处理逻辑
     PKGS="
     phpstan:phpstan/phpstan/bootstrap.php
     rector:rector/rector/bootstrap.php
@@ -44,26 +44,28 @@ RUN <<EOF
     spatie:flare-client-php/src/helpers.php
     spatie:laravel-ignition/src/helpers.php
     nunomaduro:collision/src/Adapters/Phpunit/Autoload.php
+    nunomaduro:termwind/src/Functions.php
     phpunit:phpunit/src/Framework/Assert/Functions.php
     "
 
-    # 3. 核心循环：先爆破，后伪造
+    # 3. 循环逻辑
     for ENTRY in $PKGS; do
         TOP_DIR=${ENTRY%%:*}
         STUB_FILE=${ENTRY#*:}
         
-        # 彻底删除顶级大户（如 phpstan 整个文件夹）
+        # 物理爆破顶级目录
+        # 这里会把 nunomaduro 整个删掉，但下面的 mkdir 会把它需要的生产文件建回来
         rm -rf "$TOP_DIR"
         
-        # 精准复活报错要求的入口文件
+        # 精准复活
         mkdir -p "$(dirname "$STUB_FILE")"
         echo "<?php" > "$STUB_FILE"
     done
 
-    # 4. 补刀：删除没有 require 钩子的纯开发包 (直接物理消失)
+    # 4. 补刀：删除完全不需要复活的纯垃圾
     rm -rf larastan hamcrest sebastian phar-io theseer barryvdh thecodingmachine
 
-    # 5. 极致清理：清除所有 vendor 下的无用文档/测试
+    # 5. 清理文档与测试
     find . -maxdepth 3 -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
 
     # 6. 结果输出
@@ -73,7 +75,7 @@ RUN <<EOF
     echo "  Final Vendor Size: ${SIZE_AFTER} MB"
     echo "------------------------------------------------"
 
-    # 7. 系统收尾 (不再需要手动删 Python，只清缓存)
+    # 7. 收尾
     rm -rf /var/cache/apk/* /tmp/*
 EOF
 
