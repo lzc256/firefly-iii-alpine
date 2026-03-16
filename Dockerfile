@@ -31,6 +31,7 @@ RUN <<EOF
     set -e
 
     cd /var/www/html
+    rm -rf vendor/composer vendor/autoload.php
     curl -sS https://getcomposer.org/composer-stable.phar -o composer.phar
     php composer.phar dump-autoload --no-dev --optimize --classmap-authoritative
     rm composer.phar
