@@ -10,6 +10,42 @@ ADD https://github.com/firefly-iii/firefly-iii/releases/download/${FIREFLY_VERSI
 RUN unzip FireflyIII-${FIREFLY_VERSION}.zip && \
     rm FireflyIII-${FIREFLY_VERSION}.zip
 
+RUN <<EOF
+    set -e
+    cd /app/vendor
+
+    rm -rf \
+        rector/ \
+        phpstan/ \
+        larastan/ \
+        phpunit/ \
+        fakerphp/ \
+        mockery/ \
+        hamcrest/ \
+        sebastian/ \
+        phar-io/ \
+        theseer/ \
+        barryvdh/ \
+        fruitcake/ \
+        nunomaduro/collision \
+        spatie/backtrace \
+        spatie/flare-client-php \
+        spatie/ignition \
+        spatie/laravel-ignition
+
+    find . -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
+    
+    find . -type f \( \
+        -name "*.md" \
+        -o -name "*.txt" \
+        -o -name "LICENSE*" \
+        -o -name ".gitignore" \
+        -o -name "phpunit.xml*" \
+        -o -name "composer.json" \
+    \) -delete
+
+EOF
+
 FROM alpine:${ALPINE_VERSION}
 
 ARG FIREFLY_VERSION
