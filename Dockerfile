@@ -71,7 +71,7 @@ COPY config/supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN chown -R nobody:nobody /var/www/html /run /var/lib/nginx /var/log/nginx
 
-USER nobodyE 8080
+USER nobody
 
 HEALTHCHECK --timeout=10s CMD curl --silent --fail http://127.0.0.1:8080/fpm-ping || exit 1
 
