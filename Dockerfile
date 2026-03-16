@@ -26,12 +26,12 @@ RUN apk add --no-cache \
   php85-mbstring \
   php85-pdo_sqlite \
   php85-session \
+  php85-tokenizer \
+  php85-dom \
   php85-openssl
   # php85-fileinfo \
   # php85-simplexml \
-  # php85-tokenizer \
   # php85-xmlwriter \
-  # php85-dom \
   # php85-shmop \
   # php85-pgsql \
   # php85-pdo_pgsql \
