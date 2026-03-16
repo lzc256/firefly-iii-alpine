@@ -57,6 +57,7 @@ RUN apk add --no-cache \
     php85 php85-fpm php85-bcmath php85-intl php85-curl php85-zip \
     php85-sodium php85-gd php85-xml php85-mbstring php85-pdo_sqlite \
     php85-session php85-tokenizer php85-dom php85-simplexml php85-xmlwriter php85-openssl \
+    && apk del python3 \
     && ln -s /usr/bin/php85 /usr/bin/php \
     && rm -rf /var/cache/apk/*
 
