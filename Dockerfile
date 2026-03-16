@@ -30,46 +30,49 @@ RUN <<EOF
     set -e
     cd /var/www/html/vendor
 
-    # 1. 统计原始体积
     SIZE_BEFORE=$(du -sm . | cut -f1)
 
-    # 2. 精准复活名单 (解决 Fatal Error)
+    # 1. 精准删除名单：[要删除的特定子目录]:[需要复活的桩文件]
+    # 这样 nunomaduro/collision 会被删，但 nunomaduro/termwind 会被跳过或精准复活
     PKGS="
-    phpstan:phpstan/phpstan/bootstrap.php
-    rector:rector/rector/bootstrap.php
-    mockery:mockery/library/helpers.php
-    mockery:mockery/library/Mockery.php
-    fakerphp:faker/src/Faker/Factory.php
-    spatie:flare-client-php/src/helpers.php
-    spatie:laravel-ignition/src/helpers.php
-    nunomaduro:collision/src/Adapters/Phpunit/Autoload.php
-    nunomaduro:termwind/src/Functions.php
-    phpunit:phpunit/src/Framework/Assert/Functions.php
+    phpstan/phpstan:phpstan/phpstan/bootstrap.php
+    rector/rector:rector/rector/bootstrap.php
+    mockery/mockery:mockery/library/helpers.php
+    mockery/mockery:mockery/library/Mockery.php
+    fakerphp/faker:fakerphp/faker/src/Faker/Factory.php
+    spatie/flare-client-php:spatie/flare-client-php/src/helpers.php
+    spatie/laravel-ignition:spatie/laravel-ignition/src/helpers.php
+    nunomaduro/collision:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
+    nunomaduro/termwind:nunomaduro/termwind/src/Functions.php
+    phpunit/phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
     "
 
-    # 3. 循环爆破：删掉目录 -> 建桩文件
+    # 2. 第一步：执行针对性删除和复活
     for ENTRY in $PKGS; do
-        TOP_DIR=${ENTRY%%:*}
+        TARGET_DIR=${ENTRY%%:*}
         STUB_FILE=${ENTRY#*:}
-        rm -rf "$TOP_DIR"
+        
+        # 只删特定的子包目录，不伤及其父目录下的其他兄弟
+        rm -rf "$TARGET_DIR"
+        
+        # 重建桩文件
         mkdir -p "$(dirname "$STUB_FILE")"
         echo "<?php" > "$STUB_FILE"
     done
 
-    # 4. 暴力物理清理 (单行整合版)
-    # 第一行：彻底删除无用的包目录
+    # 3. 第二步：暴力清理其他完全无关的包（这些包没有 require 钩子）
     rm -rf larastan hamcrest sebastian phar-io theseer barryvdh thecodingmachine
-    # 第二行：全深度大扫除。清理所有 tests, docs, github 目录，以及 md, txt, LICENSE 等垃圾文件
+
+    # 4. 第三步：全量深度扫除杂质文件（tests, docs, md 等）
+    # 放在最后执行，确保它清理掉那些“健康包”里的垃圾，但由于我们已经 touch 了桩文件，它们会留下来
     find . -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name ".github" -o -name "examples" \) -exec rm -rf {} + && find . -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" -o -name "phpunit.xml*" -o -name ".editorconfig" \) -delete
 
-    # 5. 最终成果
     SIZE_AFTER=$(du -sm . | cut -f1)
     echo "------------------------------------------------"
     echo "  Cleanup Summary: Saved $((SIZE_BEFORE - SIZE_AFTER)) MB"
     echo "  Final Vendor Size: ${SIZE_AFTER} MB"
     echo "------------------------------------------------"
 
-    # 6. 系统收尾
     rm -rf /var/cache/apk/* /tmp/*
 EOF
 
