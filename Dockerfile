@@ -10,42 +10,6 @@ ADD https://github.com/firefly-iii/firefly-iii/releases/download/${FIREFLY_VERSI
 RUN unzip FireflyIII-${FIREFLY_VERSION}.zip && \
     rm FireflyIII-${FIREFLY_VERSION}.zip
 
-RUN <<EOF
-    set -e
-    cd /app/vendor
-
-    rm -rf \
-        rector/vendor/ rector/config/ rector/rules/ \
-        phpstan/phpstan/phpstan.phar \
-        larastan/ \
-        fakerphp/faker/src/Faker/Provider \
-        mockery/ \
-        hamcrest/ \
-        sebastian/ \
-        phar-io/ \
-        theseer/ \
-        barryvdh/ \
-        fruitcake/ \
-        nunomaduro/collision
-        # spatie/backtrace \
-        # spatie/flare-client-php \
-        # spatie/ignition \
-        # spatie/laravel-ignition
-        # phpunit/
-
-    find . -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
-    
-    find . -type f \( \
-        -name "*.md" \
-        -o -name "*.txt" \
-        -o -name "LICENSE*" \
-        -o -name ".gitignore" \
-        -o -name "phpunit.xml*" \
-        -o -name "composer.json" \
-    \) -delete
-
-EOF
-
 FROM alpine:${ALPINE_VERSION}
 
 ARG FIREFLY_VERSION
@@ -62,6 +26,49 @@ RUN apk add --no-cache \
     && rm -rf /var/cache/apk/*
 
 COPY --from=builder --chown=nobody:nobody /app /var/www/html
+
+RUN <<EOF
+    set -e
+    cd vendor
+
+    rm -rf \
+        rector/ \
+        phpstan/ \
+        larastan/ \
+        fakerphp/ \
+        mockery/ \
+        hamcrest/ \
+        sebastian/ \
+        phar-io/ \
+        theseer/ \
+        barryvdh/ \
+        fruitcake/ \
+        phpunit/
+        nunomaduro/collision \
+        spatie/backtrace \
+        spatie/flare-client-php \
+        spatie/ignition \
+        spatie/laravel-ignition
+
+    find . -type d \( -name "tests" -o -name "docs" -o -name ".github" \) -exec rm -rf {} +
+    
+    find . -type f \( \
+        -name "*.md" \
+        -o -name "*.txt" \
+        -o -name "LICENSE*" \
+        -o -name ".gitignore" \
+        -o -name "phpunit.xml*" \
+        -o -name "composer.json" \
+    \) -delete
+
+    cd /var/www/html
+
+    curl -sS https://getcomposer.org/composer-stable.phar -o composer.phar
+    php composer.phar dump-autoload --no-dev --optimize --classmap-authoritative
+    rm composer.phar
+
+EOF
+
 
 COPY config/nginx.conf /etc/nginx/nginx.conf
 COPY config/conf.d /etc/nginx/conf.d/
