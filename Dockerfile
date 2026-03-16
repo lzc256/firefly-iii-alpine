@@ -15,7 +15,7 @@ RUN <<EOF
     cd /app/vendor
 
     rm -rf \
-        rector/ \
+        rector/vendor/ rector/config/ rector/rules/ \
         phpstan/phpstan/phpstan.phar \
         larastan/ \
         fakerphp/faker/src/Faker/Provider \
