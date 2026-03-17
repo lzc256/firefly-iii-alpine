@@ -13,14 +13,6 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  workflow-keepalive:
-    if: github.event_name == 'schedule'
-    runs-on: ubuntu-latest
-    permissions:
-      actions: write
-    steps:
-      - uses: liskin/gh-workflow-keepalive@v1
-
   check-and-build:
     runs-on: ubuntu-latest
     permissions:
@@ -51,7 +43,7 @@ jobs:
       - name: Log in to GHCR
         # 只有在版本更新或代码变动（无缓存）时才登录和构建
         if: steps.cache_check.outputs.cache-hit != 'true'
-        uses: docker/login-action@v5
+        uses: docker/login-action@v4
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
