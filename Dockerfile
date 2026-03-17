@@ -36,7 +36,9 @@ RUN <<EOF
     PKGS="
     phpstan:phpstan/phpstan/bootstrap.php
     rector:rector/rector/bootstrap.php
-
+    mockery:mockery/mockery/library/helpers.php
+    :mockery/mockery/library/Mockery.php
+    fakerphp/faker/src/Faker/Provider:
     "
 
     echo "
@@ -48,8 +50,6 @@ RUN <<EOF
     nunomaduro:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
     :nunomaduro/termwind/src/Functions.php
     phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
-    mockery:mockery/mockery/library/helpers.php
-    :mockery/mockery/library/Mockery.php 
     fakerphp:fakerphp/faker/src/Faker/Factory.php
     " > /dev/null
 
