@@ -36,14 +36,14 @@ RUN <<EOF
     PKGS="
     phpstan:phpstan/phpstan/bootstrap.php
     rector:rector/rector/bootstrap.php
-    "
-
-    echo "
     nunomaduro:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
     :nunomaduro/termwind/src/Functions.php
     spatie:spatie/flare-client-php/src/helpers.php
     :spatie/laravel-ignition/src/helpers.php
     :spatie/laravel-html/src/helpers.php
+    "
+
+    echo "
     phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
     mockery:mockery/mockery/library/helpers.php
     :mockery/mockery/library/Mockery.php 
