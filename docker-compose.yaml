@@ -13,12 +13,12 @@ services:
     image: alpine
     restart: unless-stopped
     env_file: .env
-    stop_grace_period: 1s
-    command: sh -c "
-      apk add tzdata && \
-      (ln -s /usr/share/zoneinfo/$$TZ /etc/localtime || true) && \
-      echo \"0 3 * * * wget -qO- http://app:8080/api/v1/cron/$$STATIC_CRON_TOKEN;echo\"
-      | crontab - && \
-      crond -f -L /dev/stdout"
+    stop_grace_period: 0s
+    command: |
+      sh -c "
+      apk add tzdata &&
+      (ln -s /usr/share/zoneinfo/$$TZ /etc/localtime || true) &&
+      echo '*/20 * * * * wget -qO- http://app:8080/api/v1/cron/$STATIC_CRON_TOKEN > /dev/null; date' | crontab - &&
+      exec crond -f -L /dev/stdout"
     depends_on:
       - app
