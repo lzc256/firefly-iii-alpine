@@ -23,6 +23,8 @@ RUN <<EOF
     mockery:mockery/mockery/library/helpers.php
     :mockery/mockery/library/Mockery.php
     fakerphp/faker/src/Faker/Provider:
+    "
+    echo "
     phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
     "
 
