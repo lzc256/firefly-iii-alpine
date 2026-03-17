@@ -61,7 +61,7 @@ RUN <<EOF
         echo "<?php" > "$STUB_FILE"
     done
 
-    rm -rf sebastian larastan hamcrest phar-io theseer barryvdh
+    # rm -rf sebastian larastan hamcrest phar-io theseer barryvdh
     # find . -type d \( -name "tests" -o -name "test" - -name "docs" -o -name ".github" -o -name "examples" \) ! -path "./laravel/*" ! -path "./symfony/*" -exec rm -rf {} + && \
 
     cd /var/www/html/resources/lang
