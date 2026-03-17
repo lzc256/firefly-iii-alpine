@@ -38,12 +38,15 @@ RUN <<EOF
     rector:rector/rector/bootstrap.php
     nunomaduro:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
     :nunomaduro/termwind/src/Functions.php
-    spatie:spatie/flare-client-php/src/helpers.php
-    :spatie/laravel-ignition/src/helpers.php
-    :spatie/laravel-html/src/helpers.php
+    spatie/flare-client-php:spatie/flare-client-php/src/helpers.php
+    spatie/laravel-ignition:spatie/laravel-ignition/src/helpers.php
+    spatie/ignition:
+    spatie/backtrace:
+    spatie/error-solutions:
     "
 
     echo "
+
     phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
     mockery:mockery/mockery/library/helpers.php
     :mockery/mockery/library/Mockery.php 
@@ -54,12 +57,8 @@ RUN <<EOF
         TOP_DIR=${ENTRY%%:*}
         STUB_FILE=${ENTRY#*:}
         
-        if [ -n "$TOP_DIR" ]; then
-            rm -rf "$TOP_DIR"
-        fi
-        
-        mkdir -p "$(dirname "$STUB_FILE")"
-        echo "<?php" > "$STUB_FILE"
+        [ -n "$TOP_DIR" ] && rm -rf "$TOP_DIR"
+        [ -n "$STUB_FILE" ] && ( mkdir -p "$(dirname "$STUB_FILE")" && echo "<?php" > "$STUB_FILE" )
     done
 
     rm -rf larastan hamcrest phar-io theseer barryvdh
