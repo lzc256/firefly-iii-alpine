@@ -33,14 +33,14 @@ RUN <<EOF
     
     cd /var/www/html/vendor
     PKGS="
-    phpstan:phpstan/phpstan/bootstrap.php
-    rector:rector/rector/bootstrap.php
     mockery:mockery/mockery/library/helpers.php
     :mockery/mockery/library/Mockery.php
     fakerphp:fakerphp/faker/src/Faker/Factory.php
     "
 
     echo "
+    phpstan:phpstan/phpstan/bootstrap.php
+    rector:rector/rector/bootstrap.php
     nunomaduro:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
     :nunomaduro/termwind/src/Functions.php
     spatie:spatie/flare-client-php/src/helpers.php
