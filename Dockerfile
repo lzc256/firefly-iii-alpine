@@ -41,7 +41,7 @@ RUN <<EOF
     # rm -rf larastan hamcrest phar-io theseer barryvdh
 
     cd $ROOT/resources/lang
-    find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
+    # find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
     # rm -rf $ROOT/resources/assets
 
     cd $ROOT
