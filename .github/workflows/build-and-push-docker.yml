@@ -6,22 +6,21 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
-permissions:
-  actions: write
+
 env:
   REGISTRY: ghcr.io
   # 镜像名称格式: ghcr.io/用户名/仓库keepalive-job:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  keepalive-job:
-    name: Keepalive Workflow
+  workflow-keepalive:
+    if: github.event_name == 'schedule'
     runs-on: ubuntu-latest
     permissions:
       actions: write
     steps:
-      - uses: actions/checkout@v6
-      - uses: gautamkrishnar/keepalive-workflow@v2
+      - uses: liskin/gh-workflow-keepalive@v1
+
   check-and-build:
     runs-on: ubuntu-latest
     permissions:
@@ -60,7 +59,7 @@ jobs:
 
       - name: Set up Docker Buildx
         if: steps.cache_check.outputs.cache-hit != 'true'
-        uses: docker/setup-buildx-action@v5
+        uses: docker/setup-buildx-action@v4
 
       - name: Build and Push Image
         if: steps.cache_check.outputs.cache-hit != 'true'
