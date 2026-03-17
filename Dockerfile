@@ -38,7 +38,6 @@ RUN <<EOF
     mockery:mockery/mockery/library/helpers.php
     :mockery/mockery/library/Mockery.php
     fakerphp:fakerphp/faker/src/Faker/Factory.php
-    phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
     "
 
     echo "
@@ -47,6 +46,8 @@ RUN <<EOF
     spatie:spatie/flare-client-php/src/helpers.php
     :spatie/laravel-ignition/src/helpers.php
     :spatie/laravel-html/src/helpers.php
+    phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
+    
     " > /dev/null
 
     for ENTRY in $PKGS; do
