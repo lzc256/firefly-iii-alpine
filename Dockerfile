@@ -38,9 +38,6 @@ RUN <<EOF
     mockery:mockery/mockery/library/helpers.php
     :mockery/mockery/library/Mockery.php
     fakerphp:fakerphp/faker/src/Faker/Factory.php
-    spatie:spatie/flare-client-php/src/helpers.php
-    :spatie/laravel-ignition/src/helpers.php
-    :spatie/laravel-html/src/helpers.php
     nunomaduro:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
     :nunomaduro/termwind/src/Functions.php
     phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
@@ -58,8 +55,8 @@ RUN <<EOF
         echo "<?php" > "$STUB_FILE"
     done
 
-    rm -rf larastan hamcrest phar-io theseer barryvdh
-    # find . -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name ".github" -o -name "examples" \) ! -path "./laravel/*" ! -path "./symfony/*" -exec rm -rf {} + && \
+    rm -rf sebastian larastan hamcrest phar-io theseer barryvdh
+    # find . -type d \( -name "tests" -o -name "test" - -name "docs" -o -name ".github" -o -name "examples" \) ! -path "./laravel/*" ! -path "./symfony/*" -exec rm -rf {} + && \
 
     cd /var/www/html/resources/lang
     # find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
