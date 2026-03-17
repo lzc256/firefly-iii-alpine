@@ -18,9 +18,6 @@ RUN <<EOF
     
     cd $ROOT/vendor
     PKGS="
-
-    "
-    echo "
     phpstan/phpstan/phpstan.phar:
     fakerphp/faker/src/Faker/Provider:
     rector/rector/vendor:
@@ -38,15 +35,15 @@ RUN <<EOF
         [ -n "$STUB_FILE" ] && ( mkdir -p "$(dirname "$STUB_FILE")" && echo "<?php" > "$STUB_FILE" )
     done
 
-    # rm -rf larastan hamcrest phar-io theseer barryvdh
+    rm -rf larastan hamcrest phar-io theseer barryvdh
 
     cd $ROOT/resources/lang
-    # find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
-    # rm -rf $ROOT/resources/assets
+    find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
+    rm -rf $ROOT/resources/assets
 
     cd $ROOT
-    # find . -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name ".github" -o -name "examples" \) -exec rm -rf {} + && \
-    # find . -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" -o -name "phpunit.xml*" -o -name ".editorconfig" \) -delete
+    find . -type d \( -name "tests" -o -name "test" -o -name "docs" -o -name ".github" -o -name "examples" \) -exec rm -rf {} + && \
+    find . -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" -o -name "phpunit.xml*" -o -name ".editorconfig" \) -delete
 
     cd $ROOT
     SIZE_AFTER=$(du -sm . | cut -f1)
