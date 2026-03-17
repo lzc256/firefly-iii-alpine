@@ -33,8 +33,7 @@ RUN <<EOF
     
     cd /var/www/html/vendor
     PKGS="
-    mockery:mockery/mockery/library/helpers.php
-    :mockery/mockery/library/Mockery.php
+
     fakerphp:fakerphp/faker/src/Faker/Factory.php
     "
 
@@ -47,7 +46,8 @@ RUN <<EOF
     :spatie/laravel-ignition/src/helpers.php
     :spatie/laravel-html/src/helpers.php
     phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
-    
+    mockery:mockery/mockery/library/helpers.php
+    :mockery/mockery/library/Mockery.php
     " > /dev/null
 
     for ENTRY in $PKGS; do
