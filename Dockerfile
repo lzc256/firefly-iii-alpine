@@ -18,8 +18,9 @@ RUN <<EOF
     
     cd $ROOT/vendor
     PKGS="
-    phpstan:phpstan/phpstan/bootstrap.php
-    rector:rector/rector/bootstrap.php
+    phpstan/phpstan/phpstan.phar:
+    rector/rector/vendor:
+    rector/rector/rules:
     fakerphp/faker/src/Faker/Provider:
     "
     echo "
