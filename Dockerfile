@@ -10,25 +10,9 @@ ADD https://github.com/firefly-iii/firefly-iii/releases/download/${FIREFLY_VERSI
 RUN unzip FireflyIII-${FIREFLY_VERSION}.zip && \
     rm FireflyIII-${FIREFLY_VERSION}.zip
 
-FROM alpine:${ALPINE_VERSION}
-
-ARG FIREFLY_VERSION
-LABEL Maintainer="lzc256 <i@lzc256.com>"
-WORKDIR /var/www/html
-
-RUN apk add --no-cache \
-    nginx \
-    php85 php85-fpm php85-bcmath php85-intl php85-curl php85-zip \
-    php85-sodium php85-gd php85-xml php85-mbstring php85-pdo_sqlite \
-    php85-session php85-tokenizer php85-dom php85-simplexml php85-xmlwriter php85-openssl php85-fileinfo \
-    && ln -s /usr/bin/php85 /usr/bin/php \
-    && rm -rf /var/cache/apk/*
-
-COPY --from=builder --chown=nobody:nobody /app /var/www/html
-
 RUN <<EOF
     set -e
-    ROOT="/var/www/html"
+    ROOT="/app"
 
     SIZE_BEFORE=$(du -sm . | cut -f1)
     
@@ -41,17 +25,6 @@ RUN <<EOF
     fakerphp/faker/src/Faker/Provider:
     phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
     "
-
-    echo "
-    spatie/flare-client-php:spatie/flare-client-php/src/helpers.php
-    spatie/ignition:
-    spatie/backtrace:
-    spatie/error-solutions:
-    spatie/laravel-ignition:spatie/laravel-ignition/src/helpers.php
-    nunomaduro:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
-    :nunomaduro/termwind/src/Functions.php
-    fakerphp:fakerphp/faker/src/Faker/Factory.php
-    " > /dev/null
 
     for ENTRY in $PKGS; do
         TOP_DIR=${ENTRY%%:*}
@@ -77,8 +50,23 @@ RUN <<EOF
     echo "  Cleanup Result: $SIZE_BEFORE MB -> $SIZE_AFTER MB"
     echo "  Saved: $((SIZE_BEFORE - SIZE_AFTER)) MB"
     echo "------------------------------------------------"
-    rm -rf /var/cache/apk/* /tmp/*
 EOF
+
+FROM alpine:${ALPINE_VERSION}
+
+ARG FIREFLY_VERSION
+LABEL Maintainer="lzc256 <i@lzc256.com>"
+WORKDIR /var/www/html
+
+RUN apk add --no-cache \
+    nginx \
+    php85 php85-fpm php85-bcmath php85-intl php85-curl php85-zip \
+    php85-sodium php85-gd php85-xml php85-mbstring php85-pdo_sqlite \
+    php85-session php85-tokenizer php85-dom php85-simplexml php85-xmlwriter php85-openssl php85-fileinfo \
+    && ln -s /usr/bin/php85 /usr/bin/php \
+    && rm -rf /var/cache/apk/* /tmp/*
+
+COPY --from=builder --chown=nobody:nobody /app /var/www/html
 
 COPY config/nginx.conf /etc/nginx/nginx.conf
 COPY config/conf.d /etc/nginx/conf.d/
@@ -92,4 +80,4 @@ USER nobody
 
 HEALTHCHECK --timeout=10s CMD curl --silent --fail http://127.0.0.1:8080/fpm-ping || exit 1
 
-CMD php-fpm85 -F & nginx -g 'daemon off;' & wait -n
+CMD ["sh", "-c", "trap 'kill -TERM $P1 $P2' SIGTERM; php-fpm85 -F & P1=$!; nginx -g 'daemon off;' & P2=$!; wait $P1 $P2"]
