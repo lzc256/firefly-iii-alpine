@@ -1,8 +1,24 @@
 services:
   app:
-    build: .
-    ports:
-      - 24454:8080
+    restart: unless-stopped
+    image: ghcr.io/lzc256/firefly-iii-alpine:latest
     volumes:
       - .env:/var/www/html/.env
-      - ./firefly:/var/www/html/firefly
+      - ./sqlite3.db:/var/www/html/sqlite3.db
+      - ./upload:/var/www/html/storage/upload
+    ports:
+      - 127.0.0.1:8080:8080
+
+  cron:
+    image: alpine
+    restart: unless-stopped
+    env_file: .env
+    stop_grace_period: 1s
+    command: sh -c "
+      apk add tzdata && \
+      (ln -s /usr/share/zoneinfo/$$TZ /etc/localtime || true) && \
+      echo \"0 3 * * * wget -qO- http://app:8080/api/v1/cron/$$STATIC_CRON_TOKEN;echo\"
+      | crontab - && \
+      crond -f -L /dev/stdout"
+    depends_on:
+      - app
