@@ -37,7 +37,7 @@ RUN <<EOF
         [ -n "$STUB_FILE" ] && ( mkdir -p "$(dirname "$STUB_FILE")" && echo "<?php" > "$STUB_FILE" )
     done
 
-    rm -rf larastan hamcrest phar-io theseer barryvdh
+    # rm -rf larastan hamcrest phar-io theseer barryvdh
 
     cd $ROOT/resources/lang
     find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
