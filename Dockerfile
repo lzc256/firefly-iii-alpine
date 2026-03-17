@@ -18,10 +18,11 @@ RUN <<EOF
     
     cd $ROOT/vendor
     PKGS="
-    phpstan/phpstan/phpstan.phar:
-    fakerphp/faker/src/Faker/Provider:
+
     "
     echo "
+    phpstan/phpstan/phpstan.phar:
+    fakerphp/faker/src/Faker/Provider:
     rector/rector/vendor:
     rector/rector/rules:
     phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
