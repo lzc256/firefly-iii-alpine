@@ -23,6 +23,7 @@ RUN <<EOF
     rector/rector/vendor:
     rector/rector/rules:
     phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
+    :phpunit/phpunit/src/Runner/Version.php
     mockery:mockery/mockery/library/helpers.php
     :mockery/mockery/library/Mockery.php
     "
