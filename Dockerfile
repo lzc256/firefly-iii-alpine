@@ -62,7 +62,7 @@ RUN <<EOF
         echo "<?php" > "$STUB_FILE"
     done
 
-    # rm -rf sebastian larastan hamcrest phar-io theseer barryvdh
+    rm -rf sebastian larastan hamcrest phar-io theseer barryvdh
 
     cd /var/www/html/resources/lang
     find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
