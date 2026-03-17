@@ -36,18 +36,17 @@ RUN <<EOF
     PKGS="
     phpstan:phpstan/phpstan/bootstrap.php
     rector:rector/rector/bootstrap.php
-
-
-    spatie/backtrace:
-    spatie/error-solutions:
+    nunomaduro:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
+    :nunomaduro/termwind/src/Functions.php
     "
 
     echo "
     spatie/flare-client-php:spatie/flare-client-php/src/helpers.php
     spatie/ignition:
+    spatie/backtrace:
+    spatie/error-solutions:
     spatie/laravel-ignition:spatie/laravel-ignition/src/helpers.php
-    nunomaduro:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
-    :nunomaduro/termwind/src/Functions.php
+
     phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
     mockery:mockery/mockery/library/helpers.php
     :mockery/mockery/library/Mockery.php 
