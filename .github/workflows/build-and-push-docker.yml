@@ -2,17 +2,24 @@ name: Build & Push Firefly-III Alpine Image
 
 on:
   schedule:
-    - cron: '0 */24 * * *'
+    - cron: '0 */12 * * *'
   workflow_dispatch:
   push:
     branches: [ main ]
 
 env:
   REGISTRY: ghcr.io
-  # 镜像名称格式: ghcr.io/用户名/仓库名
+  # 镜像名称格式: ghcr.io/用户名/仓库keepalive-job:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  keepalive-job:
+    name: Keepalive Workflow
+    runs-on: ubuntu-latest
+    permissions:
+      actions: write
+    steps:
+      - uses: gautamkrishnar/keepalive-workflow@v2
   check-and-build:
     runs-on: ubuntu-latest
     permissions:
@@ -21,7 +28,7 @@ jobs:
 
     steps:
       - name: Checkout Your Dockerfile & Configs
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Get Latest Firefly-III Release Tag
         id: get_release
@@ -55,7 +62,7 @@ jobs:
 
       - name: Build and Push Image
         if: steps.cache_check.outputs.cache-hit != 'true'
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6
         with:
           context: .
           file: ./Dockerfile
