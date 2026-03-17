@@ -39,6 +39,7 @@ RUN <<EOF
     mockery:mockery/mockery/library/helpers.php
     :mockery/mockery/library/Mockery.php
     fakerphp/faker/src/Faker/Provider:
+    phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
     "
 
     echo "
@@ -49,7 +50,6 @@ RUN <<EOF
     spatie/laravel-ignition:spatie/laravel-ignition/src/helpers.php
     nunomaduro:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
     :nunomaduro/termwind/src/Functions.php
-    phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
     fakerphp:fakerphp/faker/src/Faker/Factory.php
     " > /dev/null
 
