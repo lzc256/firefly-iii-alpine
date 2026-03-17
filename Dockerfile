@@ -20,12 +20,12 @@ RUN <<EOF
     PKGS="
     phpstan:phpstan/phpstan/bootstrap.php
     rector:rector/rector/bootstrap.php
-    mockery:mockery/mockery/library/helpers.php
-    :mockery/mockery/library/Mockery.php
     fakerphp/faker/src/Faker/Provider:
     "
     echo "
     phpunit:phpunit/phpunit/src/Framework/Assert/Functions.php
+    mockery:mockery/mockery/library/helpers.php
+    :mockery/mockery/library/Mockery.php
     "
 
     for ENTRY in $PKGS; do
