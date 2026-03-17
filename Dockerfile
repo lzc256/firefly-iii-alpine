@@ -64,7 +64,7 @@ RUN <<EOF
     cd /var/www/html/resources/lang
     # find . -maxdepth 1 -type d ! -name "." ! -name "en_US" ! -name "zh_CN" ! -name "ja_JP" -exec rm -rf {} +
     
-    rm -rf /var/www/html/resources/assets
+    # rm -rf /var/www/html/resources/assets
 
     cd /var/www/html
     # find . -type f \( -name "*.md" -o -name "*.txt" -o -name "LICENSE*" -o -name ".gitignore" -o -name "phpunit.xml*" -o -name ".editorconfig" \) -delete
