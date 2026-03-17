@@ -34,12 +34,11 @@ RUN <<EOF
     
     cd $ROOT/vendor
     PKGS="
-
+    phpstan:phpstan/phpstan/bootstrap.php
+    rector:rector/rector/bootstrap.php
     "
 
     echo "
-    phpstan:phpstan/phpstan/bootstrap.php
-    rector:rector/rector/bootstrap.php
     nunomaduro:nunomaduro/collision/src/Adapters/Phpunit/Autoload.php
     :nunomaduro/termwind/src/Functions.php
     spatie:spatie/flare-client-php/src/helpers.php
