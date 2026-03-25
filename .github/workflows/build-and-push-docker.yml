@@ -2,7 +2,7 @@ name: Build & Push Firefly-III Alpine Image
 
 on:
   schedule:
-    - cron: '56 6,18 * * *'
+    - cron: '56 18 */2 * *'
   workflow_dispatch:
   push:
     branches: [ main ]
